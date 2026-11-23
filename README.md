@@ -22,10 +22,20 @@
 
 ## One-time setup
 
-You need three things: an Anthropic API key, a Google OAuth client, and a Firebase project to host the server. Use one Google Cloud project for both the Firebase hosting and the OAuth client.
+You need three things: Claude API access, a Google OAuth client, and a Firebase project to host the server. Use one Google Cloud project for both the Firebase hosting and the OAuth client.
 
-### 1. Anthropic API key
-Create one at [console.anthropic.com](https://console.anthropic.com/) → API Keys. This is separate from a Claude Pro/Max subscription and is billed per use; parsing a short task costs a fraction of a cent.
+### 1. Claude API access
+The deployed server uses **Workload Identity Federation** (WIF), so there is no API key in production: its Google service account's identity token is exchanged for a short-lived Anthropic token (`web/lib/claude.ts`). Claude API usage is billed per use, separately from a Claude Pro/Max subscription; parsing a short task costs a fraction of a cent.
+
+1. Create the Google service account the server runs as:
+   ```bash
+   gcloud iam service-accounts create kairos-server --project <project-id>
+   gcloud iam service-accounts describe kairos-server@<project-id>.iam.gserviceaccount.com --format='value(uniqueId)'
+   ```
+2. In the Claude Console, open **Settings → Workload identity federation → Connect workload → Google Cloud** (needs the admin role). Use issuer `https://accounts.google.com`, audience `https://api.anthropic.com`, and match on the claims `sub` = the numeric `uniqueId` from step 1 and `email` = `kairos-server@<project-id>.iam.gserviceaccount.com`. Bind it to one workspace.
+3. Put the rule ID (`fdrl_...`) and your organization ID (Settings → Organization) into `ANTHROPIC_FEDERATION_RULE_ID` and `ANTHROPIC_ORGANIZATION_ID` in `web/apphosting.yaml`. They are identifiers, not secrets.
+
+For local development, either put an API key in `ANTHROPIC_API_KEY` in `web/.env.local` or leave it empty and sign in once with `ant auth login`; the SDK picks up either.
 
 ### 2. Google OAuth client
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com/) (e.g. "kairos"), then open the same project in [Google Cloud Console](https://console.cloud.google.com/).
@@ -42,7 +52,7 @@ Locally first:
 
 ```bash
 cd web
-cp .env.example .env.local     # fill in KAIROS_TOKEN, ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+cp .env.example .env.local     # fill in KAIROS_TOKEN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 npm install
 npm run dev
 ```
@@ -60,12 +70,14 @@ firebase use --add                       # pick your Firebase project
 
 # Store the secrets in Cloud Secret Manager (it prompts for each value and to grant access)
 firebase apphosting:secrets:set kairos-token
-firebase apphosting:secrets:set anthropic-api-key
 firebase apphosting:secrets:set google-client-id
 firebase apphosting:secrets:set google-client-secret
 firebase apphosting:secrets:set google-refresh-token   # the one from the local connect step
 
-firebase deploy --only apphosting        # creates the "kairos" backend from web/ and rolls it out
+# Create the backend running as the federated service account, then roll out
+firebase apphosting:backends:create --backend kairos --root-dir web \
+  --service-account kairos-server@<project-id>.iam.gserviceaccount.com
+firebase deploy --only apphosting
 ```
 
 `firebase.json` points App Hosting at `web/`, and `web/apphosting.yaml` lists the secrets and scaling. After the first rollout, the CLI prints your URL (`https://kairos--<project>.<region>.hosted.app`). Then:

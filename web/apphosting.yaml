@@ -13,8 +13,17 @@ runConfig:
 env:
   - variable: KAIROS_TOKEN
     secret: kairos-token
-  - variable: ANTHROPIC_API_KEY
-    secret: anthropic-api-key
+  # Claude API via Workload Identity Federation: no API key. The server's Google service
+  # account token is exchanged for a short-lived Anthropic token (see web/lib/claude.ts).
+  # These IDs are not secrets. Fill them in from the Claude Console after creating the rule.
+  - variable: ANTHROPIC_FEDERATION_RULE_ID
+    value: fdrl_REPLACE_ME
+  - variable: ANTHROPIC_ORGANIZATION_ID
+    value: REPLACE_ME
+  # - variable: ANTHROPIC_SERVICE_ACCOUNT_ID
+  #   value: svac_...
+  # - variable: ANTHROPIC_WORKSPACE_ID
+  #   value: wrkspc_...
   - variable: GOOGLE_CLIENT_ID
     secret: google-client-id
   - variable: GOOGLE_CLIENT_SECRET
