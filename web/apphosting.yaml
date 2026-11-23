@@ -15,13 +15,13 @@ env:
     secret: kairos-token
   # Claude API via Workload Identity Federation (no API key stored).
   # IDs come from platform.claude.com → Settings → Workload identity → Connect workload → Google Cloud.
-  # They are identifiers, not secrets. Uncomment and fill in after the first rollout.
-  # - variable: ANTHROPIC_FEDERATION_RULE_ID
-  #   value: fdrl_...
-  # - variable: ANTHROPIC_ORGANIZATION_ID
-  #   value: 00000000-0000-0000-0000-000000000000
-  # - variable: ANTHROPIC_SERVICE_ACCOUNT_ID
-  #   value: svac_...
+  # They are identifiers, not secrets.
+  - variable: ANTHROPIC_FEDERATION_RULE_ID
+    value: fdrl_01HmGCPrFhfGRbjb3BiD7JEF
+  - variable: ANTHROPIC_ORGANIZATION_ID
+    value: 659ab71b-16f3-49fa-8ee0-8926860fc8dc
+  - variable: ANTHROPIC_SERVICE_ACCOUNT_ID
+    value: svac_018VaWMpNb4WkidGRJHWF3n2
   - variable: GOOGLE_CLIENT_ID
     secret: google-client-id
   - variable: GOOGLE_CLIENT_SECRET
@@ -30,7 +30,7 @@ env:
     secret: google-refresh-token
   # Your App Hosting URL, e.g. https://kairos--<project-id>.us-central1.hosted.app
   # Used to build the Google OAuth redirect URL. Fill in after the first rollout.
-  # - variable: PUBLIC_URL
-  #   value: https://kairos--YOUR-PROJECT.us-central1.hosted.app
+  - variable: PUBLIC_URL
+    value: https://kairos--kairos-bb781.us-central1.hosted.app
   - variable: KAIROS_TIMEZONE
     value: America/Chicago
