@@ -21,11 +21,15 @@ let client: Anthropic | null = null;
 
 export async function parseTask(text: string, timeZone: string, now = new Date()): Promise<ParsedTask> {
   client ??= new Anthropic();
+  const model = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
+  // Server-side refusal fallback exists for Opus/Sonnet/Fable, not Haiku.
+  const fallback = model.startsWith("claude-haiku")
+    ? {}
+    : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
   const response = await client.beta.messages.parse({
-    model: process.env.CLAUDE_MODEL || "claude-opus-5-5",
+    model,
     max_tokens: 4000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
+    ...fallback,
     system: SYSTEM,
     output_config: { effort: "low", format: betaZodOutputFormat(TaskSchema) },
     messages: [
