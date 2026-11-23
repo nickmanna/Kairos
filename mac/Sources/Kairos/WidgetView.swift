@@ -183,7 +183,7 @@ struct SettingsView: View {
             Text("Connect to your Kairos server").font(.headline)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Server URL").font(.caption).foregroundStyle(.secondary)
-                TextField("https://your-kairos.vercel.app", text: $serverURL).textFieldStyle(.roundedBorder)
+                TextField("https://kairos--project.us-central1.hosted.app", text: $serverURL).textFieldStyle(.roundedBorder)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("Passcode (KAIROS_TOKEN)").font(.caption).foregroundStyle(.secondary)

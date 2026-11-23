@@ -1,0 +1,29 @@
+# Firebase App Hosting config (Cloud Run under the hood).
+# Secrets live in Google Cloud Secret Manager. Create each one once with:
+#   firebase apphosting:secrets:set <name>
+# and grant the backend access when the CLI asks.
+
+runConfig:
+  minInstances: 0 # scale to zero when idle, so it costs ~nothing
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: KAIROS_TOKEN
+    secret: kairos-token
+  - variable: ANTHROPIC_API_KEY
+    secret: anthropic-api-key
+  - variable: GOOGLE_CLIENT_ID
+    secret: google-client-id
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: google-client-secret
+  - variable: GOOGLE_REFRESH_TOKEN
+    secret: google-refresh-token
+  # Your App Hosting URL, e.g. https://kairos--<project-id>.us-central1.hosted.app
+  # Used to build the Google OAuth redirect URL. Fill in after the first rollout.
+  # - variable: PUBLIC_URL
+  #   value: https://kairos--YOUR-PROJECT.us-central1.hosted.app
+  - variable: KAIROS_TIMEZONE
+    value: America/Chicago
