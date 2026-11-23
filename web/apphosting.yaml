@@ -30,7 +30,7 @@ env:
     secret: google-refresh-token
   # Your App Hosting URL, e.g. https://kairos--<project-id>.us-central1.hosted.app
   # Used to build the Google OAuth redirect URL. Fill in after the first rollout.
-  # - variable: PUBLIC_URL
-  #   value: https://kairos--YOUR-PROJECT.us-central1.hosted.app
+  - variable: PUBLIC_URL
+    value: https://kairos--kairos-bb781.us-central1.hosted.app
   - variable: KAIROS_TIMEZONE
     value: America/Chicago
