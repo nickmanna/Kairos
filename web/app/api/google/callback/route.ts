@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   if (!json.refresh_token) return page(`<p>No refresh token returned: ${esc(json.error_description ?? "unknown error")}</p>`, 400);
 
   return page(`<h2>Google Calendar connected</h2>
-<p>Copy this value into the <code>GOOGLE_REFRESH_TOKEN</code> environment variable (Vercel → Project → Settings → Environment Variables, or <code>web/.env.local</code> locally), then redeploy or restart.</p>
+<p>Copy this value into the <code>GOOGLE_REFRESH_TOKEN</code> setting: locally in <code>web/.env.local</code>, or on Firebase with <code>firebase apphosting:secrets:set google-refresh-token</code>. Then restart or redeploy.</p>
 <textarea readonly rows="4" style="width:100%;font:13px ui-monospace" onclick="this.select()">${esc(json.refresh_token)}</textarea>
 <p>It is shown only once. Keep it private: it lets Kairos read and write your calendar.</p>`);
 }

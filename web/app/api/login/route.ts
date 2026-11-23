@@ -1,10 +1,11 @@
 import { checkToken, COOKIE } from "@/lib/auth";
+import { isHttps } from "@/lib/http";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { token?: unknown };
   const token = typeof body.token === "string" ? body.token.trim() : "";
   if (!checkToken(token)) return Response.json({ error: "Wrong passcode." }, { status: 401 });
-  const secure = new URL(req.url).protocol === "https:" ? "; Secure" : "";
+  const secure = isHttps(req) ? "; Secure" : "";
   return new Response(null, {
     status: 204,
     headers: {

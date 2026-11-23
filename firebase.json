@@ -1,0 +1,7 @@
+{
+  "apphosting": {
+    "backendId": "kairos",
+    "rootDir": "web",
+    "ignore": ["node_modules", ".git", "mac"]
+  }
+}

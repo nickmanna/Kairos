@@ -11,4 +11,12 @@ export function validTimeZone(tz: unknown): string {
   return process.env.KAIROS_TIMEZONE || "America/Chicago";
 }
 
-export const origin = (req: Request) => process.env.PUBLIC_URL?.replace(/\/$/, "") || new URL(req.url).origin;
+/** Public origin of this app. Cloud Run / App Hosting sit behind a proxy, so prefer the forwarded headers. */
+export function origin(req: Request): string {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, "");
+  const host = req.headers.get("x-forwarded-host");
+  const proto = req.headers.get("x-forwarded-proto")?.split(",")[0];
+  return host ? `${proto || "https"}://${host}` : new URL(req.url).origin;
+}
+
+export const isHttps = (req: Request) => origin(req).startsWith("https:");

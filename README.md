@@ -9,7 +9,7 @@
 
 ```
  Mac widget (SwiftUI) ─┐
-                       ├─► Kairos server (Next.js on Vercel) ─► Claude API (parse note)
+                       ├─► Kairos server (Next.js on Firebase App Hosting) ─► Claude API (parse note)
  iPhone web app (PWA) ─┘                                     └► Google Calendar API
 ```
 
@@ -22,19 +22,19 @@
 
 ## One-time setup
 
-You need three things: an Anthropic API key, a Google OAuth client, and somewhere to run the server (Vercel's free tier is fine).
+You need three things: an Anthropic API key, a Google OAuth client, and a Firebase project to host the server. Use one Google Cloud project for both the Firebase hosting and the OAuth client.
 
 ### 1. Anthropic API key
 Create one at [console.anthropic.com](https://console.anthropic.com/) → API Keys. This is separate from a Claude Pro/Max subscription and is billed per use; parsing a short task costs a fraction of a cent.
 
 ### 2. Google OAuth client
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (e.g. "Kairos").
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com/) (e.g. "kairos"), then open the same project in [Google Cloud Console](https://console.cloud.google.com/).
 2. **APIs & Services → Library**: enable **Google Calendar API**.
 3. **APIs & Services → OAuth consent screen**: choose *External*, fill in the app name and your email, add yourself as a test user.
 4. **Then click "Publish app"** so it's *In production*. Unverified is fine for personal use (you'll click through a warning once). If you leave it in *Testing*, Google expires the refresh token every 7 days.
 5. **Credentials → Create credentials → OAuth client ID → Web application.** Add authorized redirect URIs:
    - `http://localhost:3000/api/google/callback`
-   - `https://<your-vercel-app>.vercel.app/api/google/callback` (add once you know the URL)
+   - `https://<your-backend-url>/api/google/callback` (add after the first App Hosting rollout, see below)
 6. Copy the client ID and secret.
 
 ### 3. Run the server
@@ -49,10 +49,34 @@ npm run dev
 
 `KAIROS_TOKEN` is a passcode you make up (e.g. `openssl rand -hex 24`). Then open <http://localhost:3000/api/google/connect>, enter the passcode, approve Google, and paste the refresh token it shows into `GOOGLE_REFRESH_TOKEN` in `.env.local`. Restart `npm run dev`.
 
-Deploy to Vercel: import this repo at [vercel.com/new](https://vercel.com/new), set **Root Directory** to `web`, and add the same environment variables. Visit `https://<app>.vercel.app/api/google/connect` once if you want a separate token for production (or reuse the local one).
+#### Deploy to Firebase App Hosting (Google Cloud)
+
+App Hosting builds the Next.js app and runs it on Cloud Run. It needs the **Blaze** (pay-as-you-go) plan, but with `minInstances: 0` a personal app like this usually stays inside the free tier. Set a budget alert in Cloud Billing to be safe.
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use --add                       # pick your Firebase project
+
+# Store the secrets in Cloud Secret Manager (it prompts for each value and to grant access)
+firebase apphosting:secrets:set kairos-token
+firebase apphosting:secrets:set anthropic-api-key
+firebase apphosting:secrets:set google-client-id
+firebase apphosting:secrets:set google-client-secret
+firebase apphosting:secrets:set google-refresh-token   # the one from the local connect step
+
+firebase deploy --only apphosting        # creates the "kairos" backend from web/ and rolls it out
+```
+
+`firebase.json` points App Hosting at `web/`, and `web/apphosting.yaml` lists the secrets and scaling. After the first rollout, the CLI prints your URL (`https://kairos--<project>.<region>.hosted.app`). Then:
+
+1. Add `https://<that-url>/api/google/callback` as a redirect URI on the OAuth client.
+2. Uncomment `PUBLIC_URL` in `web/apphosting.yaml`, set it to that URL, and deploy again.
+
+Prefer deploys on every push? In the Firebase console, go to **App Hosting → Create backend**, connect the GitHub repo, and set the root directory to `web`. Each push to `main` then rolls out on its own.
 
 ### 4. iPhone
-Open your Vercel URL in Safari → enter the passcode → Share → **Add to Home Screen**. To dictate, switch to the Wispr Flow keyboard in the prompt box.
+Open your App Hosting URL in Safari → enter the passcode → Share → **Add to Home Screen**. To dictate, switch to the Wispr Flow keyboard in the prompt box.
 
 ### 5. Mac widget
 Requires macOS 14+ and Xcode (or the Xcode command line tools).
@@ -63,7 +87,7 @@ cd mac
 open ~/Applications/Kairos.app
 ```
 
-On first launch the widget shows Settings: enter the server URL (`http://localhost:3000` or your Vercel URL) and the passcode. The clock icon in the menu bar has *Pin to Desktop*, *Open at Login*, and Quit. You can also open `mac/Package.swift` in Xcode and press Run.
+On first launch the widget shows Settings: enter the server URL (`http://localhost:3000` or your App Hosting URL) and the passcode. The clock icon in the menu bar has *Pin to Desktop*, *Open at Login*, and Quit. You can also open `mac/Package.swift` in Xcode and press Run.
 
 **Using it with Wispr Flow:** press ⌃⌥Space, hold your Wispr Flow key and speak, press Return. Esc sends the widget back to the desktop.
 
