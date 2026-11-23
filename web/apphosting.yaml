@@ -13,8 +13,15 @@ runConfig:
 env:
   - variable: KAIROS_TOKEN
     secret: kairos-token
-  - variable: ANTHROPIC_API_KEY
-    secret: anthropic-api-key
+  # Claude API via Workload Identity Federation (no API key stored).
+  # IDs come from platform.claude.com → Settings → Workload identity → Connect workload → Google Cloud.
+  # They are identifiers, not secrets. Uncomment and fill in after the first rollout.
+  # - variable: ANTHROPIC_FEDERATION_RULE_ID
+  #   value: fdrl_...
+  # - variable: ANTHROPIC_ORGANIZATION_ID
+  #   value: 00000000-0000-0000-0000-000000000000
+  # - variable: ANTHROPIC_SERVICE_ACCOUNT_ID
+  #   value: svac_...
   - variable: GOOGLE_CLIENT_ID
     secret: google-client-id
   - variable: GOOGLE_CLIENT_SECRET

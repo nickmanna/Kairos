@@ -1,6 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
+import { makeClient } from "./anthropic";
 import { localNow, type ParsedTask } from "./time";
 
 const TaskSchema = z.object({
@@ -20,7 +21,7 @@ Strip filler words from dictation. Keep the title short; put any remaining detai
 let client: Anthropic | null = null;
 
 export async function parseTask(text: string, timeZone: string, now = new Date()): Promise<ParsedTask> {
-  client ??= new Anthropic();
+  client ??= makeClient();
   const model = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
   // Server-side refusal fallback exists for Opus/Sonnet/Fable, not Haiku.
   const fallback = model.startsWith("claude-haiku")
