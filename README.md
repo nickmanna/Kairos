@@ -24,8 +24,11 @@
 
 You need three things: an Anthropic API key, a Google OAuth client, and a Firebase project to host the server. Use one Google Cloud project for both the Firebase hosting and the OAuth client.
 
-### 1. Anthropic API key
-Create one at [console.anthropic.com](https://console.anthropic.com/) → API Keys. This is separate from a Claude Pro/Max subscription and is billed per use; parsing a short task costs a fraction of a cent.
+### 1. Claude API access
+Add a little credit at [platform.claude.com](https://platform.claude.com/) (separate from a Claude Pro/Max subscription; parsing with Haiku costs about $0.0002 per task).
+
+- **Local dev:** put an API key in `web/.env.local`, or leave it empty and run `ant auth login` once to use your own sign-in.
+- **Production:** no key is stored. The server uses **Workload Identity Federation**: Cloud Run proves it is your App Hosting service account and gets a short-lived Claude token (set up after the first deploy, below).
 
 ### 2. Google OAuth client
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com/) (e.g. "kairos"), then open the same project in [Google Cloud Console](https://console.cloud.google.com/).
@@ -60,7 +63,6 @@ firebase use --add                       # pick your Firebase project
 
 # Store the secrets in Cloud Secret Manager (it prompts for each value and to grant access)
 firebase apphosting:secrets:set kairos-token
-firebase apphosting:secrets:set anthropic-api-key
 firebase apphosting:secrets:set google-client-id
 firebase apphosting:secrets:set google-client-secret
 firebase apphosting:secrets:set google-refresh-token   # the one from the local connect step
@@ -72,6 +74,15 @@ firebase deploy --only apphosting        # creates the "kairos" backend from web
 
 1. Add `https://<that-url>/api/google/callback` as a redirect URI on the OAuth client.
 2. Uncomment `PUBLIC_URL` in `web/apphosting.yaml`, set it to that URL, and deploy again.
+
+#### Connect Claude with Workload Identity Federation
+
+1. Find the backend's service account and its numeric ID:
+   ```bash
+   gcloud iam service-accounts describe firebase-app-hosting-compute@<project-id>.iam.gserviceaccount.com --format='value(uniqueId)'
+   ```
+2. At platform.claude.com → **Settings → Workload identity → Connect workload → Google Cloud** (needs the org admin role), create the issuer `https://accounts.google.com`, a service account, and a rule matching audience `https://api.anthropic.com`, `sub` = that numeric ID and `email` = that service account email.
+3. Put the rule, organization and service account IDs into `web/apphosting.yaml` (the commented `ANTHROPIC_*` lines) and deploy again. If the first task fails with *Authentication failed*, the reason is on the Console's authentication history tab.
 
 Prefer deploys on every push? In the Firebase console, go to **App Hosting → Create backend**, connect the GitHub repo, and set the root directory to `web`. Each push to `main` then rolls out on its own.
 
